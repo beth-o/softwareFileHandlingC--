@@ -1,172 +1,169 @@
+/*Name:     Beth Marlatt
+Class:      CIS269, HW9
+Project:    Create a menu-driven software ordering system that
+    extracts inventory from a file into a binary tree for searching,
+    inserting and deleting, then uploads the modified tree to the file
+    when the user is done.
+Date:       November 24, 2017
+NOTE:       Although I put lots and lots of time into this it is extremely clunky and bugs not worked out- fair warning...
+*/
+
 #include <iostream>
-#include<ostream>
 #include <vector>
-#include<list>
 #include<fstream>
-#include<string>
-#include<utility>
-#include<algorithm>
-#include<cstdio>
-#include<cstdlib>
-#include<sstream>
 #include "ItemClass.h"
+#include "windows.h"
+#include "conio.h"
 using namespace std;
 
+//I made some global variables (not best practice but easier for me
+//so I wasn't passing so many parameters to my functions
 char decision = 'N';
 char choice;
-char checkChoiceStr(char d, string& b);
-char checkChoiceInt(char d, int &b);
-char checkChoiceDbl(char d, double &b);
-char quitProgram(); //quit program function
-void inputItem();
-void sortVector(vector<ItemClass> &v);
-void swapItems(string &a, string &b);
-void printVector(vector<ItemClass> &v);
-void resetVars(string &n, string &v, int &k, int &q, double &p);
-string objName;
-ItemClass *tempObj;
-string v, n ; //version,name
-int k, q; //key, quantity
-double p; //price
+string v, n;   //version,name
+int k, q;       //key, quantity
+double p;       //price
+char checkChoiceStr(char d, string& b); //check user input for new item function below
+char checkChoiceInt(char d, int &b);    //check user input for new item function below
+char checkChoiceDbl(char d, double &b); //check user input for new item function below
+void inputItem(vector<ItemClass> &v);   //function accepts vector of ItemClass objects
 
 int main() {
 
-    //declare classes for each software item
-    ItemClass photoshop;
-    ItemClass nortonU;
-    ItemClass nSysWorks;
-    ItemClass vsPro;
-
-    //load class objects primitively
-    nortonU.setItem("Norton Utilities", "n/a", 1, 10, 50);
-    vsPro.setItem( "Visual Studio Professional", "2020", 3, 19, 700);
-    nSysWorks.setItem("Norton System Works 2009", "", 0, 10, 50);
-
-    //declare a new class to play with file input/output
+    //modify window background and font color
+    system("color F0");
+    //declare a new class to take/put file input/output
     ItemClass classObj;
 
     //declare a vector to hold the objects for
     //later sorting and placing into a tree structure
     vector<ItemClass> classVector;
-    vector<ItemClass>fileIO_Vector;
-    ifstream file; //create filestream
-    file.open("software.txt");
 
-    //make sure the file will read
-    if (!file) {
-        cerr << "Error reading from file." << endl;
-        return EXIT_FAILURE; //system  message
-    }
-    classObj.readItem(file, classVector);
-    file.close();
+    //call read item which will stream file into member vars, then into separate
+    //objects, and finally into a vector of objects
+    classObj.readItem(classVector);
 
-      for (unsigned int i = 0; i < fileIO_Vector.size(); ++i) {
-        fileIO_Vector[i].putItemInFile();
-    }
-    //  cout << "here is the object we extracted from the IO File': \n" << endl;
-  //  printVector(fileIO_Vector);
-    for (unsigned int count = fileIO_Vector.size()-1; count >= 0; --count) {
-        //this loop compares elements with their neighbor
-        for (unsigned int index = 0; index < fileIO_Vector.size()-1; index++) {
+    //sort the vector to prepare for placing in a tree
+    classObj.sortVector(classVector);
+    cout << "\n  Here is the current inventory: \n" << endl;
 
-            if (fileIO_Vector[index].getName() > fileIO_Vector[index+1].getName()) {
-                string temp =  fileIO_Vector[index].getName();
-                fileIO_Vector[index].getName() = fileIO_Vector[index+1].getName();
-                fileIO_Vector[index+1].getName() = temp;
-            }
-        }
-}
-//sort(objs.begin(), objs.end(), [](const MyClass& lhs, const MyClass& rhs){ return lhs.value < rhs.value; });
-
-
-
-//    sortVector(fileIO_Vector);
-//   sortVector( fileIO_Vector);
-//  sort(fileIO_Vector.begin(), fileIO_Vector.end());
-    printVector(fileIO_Vector);
-    ItemClass tempObj;
-
-    classVector.push_back(pshop);
-    classVector.push_back(nortonU);
-    classVector.push_back(vsPro);
-    classVector.push_back(nSysWorks);
-
-    cout << "again retrieving from file putting into an object: " << endl;
-
+    classObj.printAll(classVector);
+    cout << " ----------------End of Items----------------- \n\n";
 
     cout <<"\n\t\tSoftware File System\n\n" << endl;
-    cout << "\t   ------------Main Menu-----------------" << endl;
-    cout << "\t|  (A)dd Software                      |" << endl;
-    cout << "\t|  (U)pdate Software Item              |" << endl;
-    cout << "\t|  (D)elete Software Item              |" << endl;
-    cout << "\t|  (V)iew Inventory                    |" << endl;
-    cout << "\t|  (Q)uit System                       |\n" << endl;
-    cout << "\t -------------------------------------" << endl;
+    cout << "\t ------------Main Menu-----------------\t" << endl;
+    cout << "\t|  (S)earch for Software               |\t" << endl;
+    cout << "\t|  (A)dd Software                      |\t" << endl;
+    cout << "\t|  (U)pdate Software Item              |\t" << endl;
+    cout << "\t|  (D)elete Software Item              |\t" << endl;
+    cout << "\t|  (V)iew Inventory                    |\t" << endl;
+    cout << "\t|  (Q)uit System                       |\t" << endl;
+    cout << "\t -------------------------------------\t" << endl;
 
-    cout << "What is your choice: " ;
+    //string to hold user input
+    string titleToSearch;
+
+//jump labels used (my bad)
+search:
+    //flush cin input before taking new search values
+    cin.clear();
+    fflush(stdin);
+    cout << "\n\n  What software are you looking for? " << endl;
+
+    getline(cin, titleToSearch);
+
+    //now search using tree formation-returns the subscript of the search item if found
+    int position = classObj.searchBinaryTree(classVector, titleToSearch);
+
+//jump label
+backToBegin:
+    cout << "  \nWhat is your choice: " ;
     cin >> choice;
     choice = toupper(choice);
-    while (!choice) {
-        cout << "Error: enter a letter." ;
-        cin.clear();
-        cin >> choice;
-        choice = toupper(choice);
-    }
-    if (choice == 'A' ) {
-        inputItem();
-    }
-    if(choice == 'V') {
 
+    //case statements for menu
+    switch (choice) {
+    case 'A':           //Add
+        inputItem(classVector);
+        goto backToBegin;
+        break;
+    case 'U': {         //Update
+        cin.clear();
+        fflush(stdin);
+        classVector[position].printItem();
+        cout << "\n  Is this the item you'd like to update? " ;
+        cin >> decision;
+        decision = toupper(decision);
+        if (decision == 'Y') {
+            cout << "  New quantity on hand: " ;
+            cin >> q;
+            classVector[position].setQuantity(q);
+            cout << "  New price for software: " ;
+            cin >> p;
+            classVector[position].setPrice(p);
+            cout << "\n\n  Updated Item Information: " << endl;
+            classVector[position].printItem();
+        }
+        if (decision != 'Y') {
+            goto search;
+        }
+        goto backToBegin;
+    }
+    break;
+    case 'S': {             //Search
+        string titleToSearch;
+        cin.clear();
+        fflush(stdin);
+        cout << "  \nWhat software are you looking for? " << endl;
+        getline(cin, titleToSearch);
+
+        //now search using tree formation-this function returns the integer of the object's location
+        int position = classObj.searchBinaryTree(classVector, titleToSearch);//displays item if found returns position in obj array
+        // classVector[position].printItem();
+
+        goto backToBegin;
+    }
+    break;
+
+    case 'V': {             //View
+        cout << "  Here is the current inventory listing: " << endl;
+        classObj.printAll(classVector);
+        goto backToBegin;
+    }
+    break;
+
+    case 'D': {
+        cout << "  Delete " ;
+        classVector[position].printItem();
+        cout << "? " ;
+        cin.clear();
+        cin >> decision;
+        decision = toupper(decision);
+        if (decision == 'Y') {
+            cout << "  Deleting.. " << classVector[position].getName() << endl;
+            vector<ItemClass> ::iterator i1 = classVector.begin();
+            classVector.erase(classVector.begin()+position);
+            cout << "\n\n\n"<< endl;
+        }
+        goto backToBegin;
+    }
+    break;
+
+    default:                //default switch is quit- but actually just proceeds to save
+        cout << "Quit Program." << endl;
+    }
+
+    cout << "\nDo you want to save all your changes\n to the file before exiting? " ;
+    cin.clear();
+    cin >> decision;
+    decision = toupper(decision);
+    if (decision == 'Y') {
+        cout << "\n\nSaving to file...\n" << endl;
+        classObj.saveAll(classVector);
     }
     return 0;
 }
-//--------------------printVector Function ---------------------------
-void printVector(vector<ItemClass> &v) {
-    for (unsigned int i = 0; i < v.size(); ++i) {
-        v[i].printItem();
-    }
-}
-//--------------------sortVector Function ----------------------------
-void sortVector(vector<ItemClass> &v) {
 
-    //start at the end of the array
-    for (unsigned int i = v.size()-1; i >= 0; --i) {
-        //this loop compares elements with their neighbor
-        for (unsigned int index = 0; index < v.size()-1; index++) {
-
-            if (v[index].getName() > v[index+1].getName()) {
-                string temp =  v[index].getName();
-                v[index].getName() = v[index+1].getName();
-                v[index+1].getName() = temp;
-
-            }
-        }
-    }
-
-}
-//----------------------swap Function ------------------------------
-void swapItems(string &a, string &b) {
-    string temp;
-    temp = a;
-    a = b;
-    b = temp;
-}
-
-
-//--------------------printAll Function ----------------------------
-void printAll(vector<ItemClass> &v) {
-    for (unsigned int i = 0; i < v.size(); ++i) {
-        v[i].printItem();
-    }
-}
-//--------------------resetVars Double Function ----------------------------
-void resetVars(string &n, string &v, int &k, int &q, double &p) {
-    n = "";
-    v = "";
-    k +=1;
-    q = 0;
-    p = 0;
-}
 
 //--------------------checkChoice Double Function --------------------------
 char checkChoiceDbl(char d, double &b) {
@@ -180,7 +177,6 @@ char checkChoiceDbl(char d, double &b) {
         d = toupper(d);
     }
     return d;
-
 }
 
 //--------------------checkChoice String Function --------------------------
@@ -195,8 +191,8 @@ char checkChoiceStr(char d, string &b) {
         d = toupper(d);
     }
     return d;
-
 }
+
 //--------------------checkChoice Integer Function --------------------------
 char checkChoiceInt(char d, int &b) {
 
@@ -212,68 +208,78 @@ char checkChoiceInt(char d, int &b) {
 }
 
 //--------------------inputItem Function ---------------------------
-void inputItem() {
-    cout << "Enter a one-word description for the software: " << endl ;
-    cin >> objName ;
-    cout << "You entered " << objName << " " ;
-    cout << "Is this correct? " ;
-    cin >> decision;
-    checkChoiceStr(decision, objName);
+void inputItem(vector<ItemClass>&vec) {
     cin.clear();
+    ItemClass classObj;
     cout << "Full name of the software: " << endl ;
     cin.ignore();
+    fflush(stdin);
     getline(cin,n);
     cout << "You entered: " << n << endl;
-    cout << "Is this correct? " ;
+    cout << "Is this correct? (y/n) " ;
     cin >> decision;
     checkChoiceStr(decision, n);
+
+    classObj.setName(n);
+
     cout << "Enter version Info: " ;
+    cin.ignore();
+    fflush(stdin);
     cin >> v;
     cout << "You entered: " << v << endl ;
-    cout << "Is this correct (y/n)" ;
+    cout << "Is this correct (y/n) " ;
     cin >> decision;
     checkChoiceStr(decision, v);
+
+    classObj.setVersion(v);
+
     cout << "Enter quantity on hand: " ;
+    cin.ignore();
+    fflush(stdin);
     cin >> q;
     cout << "You entered: " << q << endl;
     cout << "Is this correct (y/n)? " ;
     cin >> decision;
     checkChoiceInt(decision, q);
+
+    classObj.setQuantity(q);
+
     cout << "Enter the price: " ;
+    cin.ignore();
+    fflush(stdin);
     cin >> p ;
     cout << "You entered: " << p << endl;
     cout << "Is this correct (y/n)? " ;
     cin >> decision;
     checkChoiceDbl(decision, p);
+
+    classObj.setPrice(p);
+
     cout << "\n\nReview the software information before saving." << endl;
-    cout << "\tShort Name: \t" << objName << endl;
     cout << "\tFull Name: \t" << n << endl;
     cout << "\tVersion: \t" << v << endl;
     cout <<"\tQuantity: \t" << q << endl;
     cout << "\tPrice: \t\t$" << p << endl << endl;
-    cout << "Save to inventory (y/n)? " ;
+    cout << "Save to inventory vector (y/n)? " ;
     cin >> decision;
     decision = toupper(decision);
     if (decision == 'Y') {
         cout << "Are you sure you want to save? " ;
         cin >> decision;
+        decision = toupper(decision);
         if (decision == 'N') {
             //  quitProgram();
         }
-        decision = toupper(decision);
 
         if (decision == 'Y') {
-            ItemClass objName;
-            k++;
-            objName.setItem(n, v, k, q, p);
-            objName.putItemInFile();
+
+            k = vec.size()+2;
+            classObj.setKey(k);
+
+            // classObj.setItem(n, v, k, q, p);
+            vec.push_back(classObj);
+            cout << "Here is the updated vector contents: " << endl;
+            classObj.printAll(vec);
         }
     }
 }
-
-//--------------------quitProgram Function ---------------------------
-
-char quitProgram() {
-    return 0;
-}
-

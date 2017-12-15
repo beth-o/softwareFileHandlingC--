@@ -1,0 +1,21 @@
+Adobe Photoshop
+CS5
+5 21 580
+Microsoft Office
+2010
+6 27 239.45
+Norton System Works
+2009
+6 7 74.99
+Ubuntu Server
+16.04
+7 6 100.02
+Visio Professional
+2017
+7 15 500
+Visual Studio Professional
+2013
+4 5 400
+Microsoft Paint
+2017
+8 300 511.99 
